@@ -1,4 +1,4 @@
-import asynchttpserver, asyncnet, asyncdispatch, db_postgres, sequtils, strutils, re
+import asynchttpserver, asyncdispatch, db_postgres, strutils, re
 
 type
   Haul = object
@@ -16,6 +16,7 @@ type
 
 var db {.threadvar.}: DbConn
 
+# http functions
 proc fetchHaulById(id: string): Haul =
   let row = db.getRow(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null AND id=? LIMIT 1", id)
   if row[0].len <= 0: return
@@ -70,21 +71,44 @@ proc httpHandler(req: Request) {.async,gcsafe.} =
   await req.respond(Http200, $fetchRandomHauls(25))
 
 
-# main
-db = open("localhost", "postgres", "", "ih")
-# db.exec(sql"""CREATE TABLE hauls (
-#                 id serial primary key,
-#                 user_id integer,
-#                 filename varchar(128),
-#                 hash varchar(64),
-#                 caption varchar(200),
-#                 filesize integer,
-#                 fileext varchar(16),
-#                 width integer,
-#                 height integer,
-#                 deleted_at integer,
-#                 created_at integer)
-#                 """)
+# render functions
+proc haulUrl(h: Haul): string =
+  "https://imagehaul.com/" & $h.id
 
-var server = newAsyncHttpServer()
-waitFor server.serve(Port(6000), httpHandler)
+proc thumbUrl(h: Haul): string =
+  "https://imagehaul.s3-us-west-1.amazonaws.com/thethumbs/medium/" & h.filename & ".jpg"
+
+proc imageUrl(h: Haul): string =
+  "https://imagehaul.s3-us-west-1.amazonaws.com/thehauls/" & h.filename & "." & h.fileext
+
+proc renderGridItem(h: Haul): string =
+  # anchor tag
+  result.add "<a href=\""
+  result.add h.haulUrl()
+  result.add "\" class=\"item\">"
+  # img tag
+  result.add "<img src=\""
+  result.add h.thumbUrl()
+  result.add "\">"
+  # close anchor
+  result.add "</a>"
+
+proc renderHaulItem(h: Haul): string =
+  # caption
+  result.add "<h3>"
+  result.add h.caption
+  result.add "</h3>"
+  # image
+  result.add "<img src=\""
+  result.add h.imageUrl()
+  result.add "\">"
+
+let h = Haul(id: 1234, caption: "test caption please ignore", filename: "feelsfilenameman", fileext: "gif")
+echo renderGridItem(h)
+echo renderHaulItem(h)
+
+# main
+# db = open("localhost", "postgres", "", "ih")
+
+# var server = newAsyncHttpServer()
+# waitFor server.serve(Port(6000), httpHandler)
