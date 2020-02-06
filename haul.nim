@@ -18,6 +18,7 @@ var db {.threadvar.}: DbConn
 
 proc fetchHaulById(id: string): Haul =
   let row = db.getRow(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null AND id=? LIMIT 1", id)
+  if row[0].len <= 0: return
   result = Haul(
     id: parseInt(row[0]),
     filename: row[1],
@@ -28,6 +29,7 @@ proc fetchHaulById(id: string): Haul =
 
 proc fetchRandomHaul(): Haul =
   let row = db.getRow(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null ORDER BY random() LIMIT 1")
+  if row[0].len <= 0: return
   result = Haul(
     id: parseInt(row[0]),
     filename: row[1],
@@ -38,6 +40,7 @@ proc fetchRandomHaul(): Haul =
 
 proc fetchRandomHauls(c: int): seq[Haul] =
   for row in db.rows(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null ORDER BY random() LIMIT ?", c):
+    if row[0].len <= 0: return
     result.add Haul(
       id: parseInt(row[0]),
       filename: row[1],
@@ -47,8 +50,8 @@ proc fetchRandomHauls(c: int): seq[Haul] =
     )
 
 proc parseHaulId(input: string, reg: Regex): string =
-  var results: seq[string]
-  if match(input, reg, results, 1):
+  var results: array[1, string]
+  if input.match(reg, results):
     return results[0]
 
 proc httpHandler(req: Request) {.async,gcsafe.} =
@@ -59,7 +62,7 @@ proc httpHandler(req: Request) {.async,gcsafe.} =
   if p == "/random": # redirect to random haul
     await req.respond(Http200, $fetchRandomHaul())
 
-  let haulid = p.parseHaulId(re"/([0-9]+)")
+  let haulid = p.parseHaulId(re"\/([0-9]+)")
   if haulid.len > 0: # show haul via id
     await req.respond(Http200, $fetchHaulById(haulid))
 
