@@ -1,4 +1,4 @@
-import asynchttpserver, asyncdispatch, db_postgres, strutils, re, random, htmlparser
+import asynchttpserver, asyncdispatch, db_postgres, strutils, re, random
 
 type
   Haul = object
@@ -14,7 +14,7 @@ type
     deleted_at: string
     created_at: string
 
-let
+const
   RootUrl = "https://imagehaul.com/"
   MaxHaulCount = 15768
 
@@ -89,8 +89,6 @@ proc renderGridItem(h: Haul): string =
   result.add "</a>"
 
 proc renderHaulItem(h: Haul): string =
-  if h.deleted_at.len > 0:
-    return "<p>Haul was deleted.</p>"
   # caption
   result.add "<div class=\"haulitem\">"
   result.add "<h3>"
@@ -128,7 +126,8 @@ proc renderNextButton(h: Haul): string =
   result.add "\" class=\"next\">Next</a>"
 
 proc renderRandomButton(): string =
-  result.add "<a href=\"/"
+  result.add "<a href=\""
+  result.add RootUrl & "/"
   result.add $rand(MaxHaulCount)
   result.add "\">Random</a>"
 
