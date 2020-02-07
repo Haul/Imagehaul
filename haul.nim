@@ -150,7 +150,7 @@ proc renderNextButton(h: Haul): string =
 
 proc renderRandomButton(): string =
   result.add "<a href=\""
-  result.add RootUrl & "/"
+  result.add RootUrl
   result.add $rand(MaxHaulCount)
   result.add "\">Random</a>"
 
