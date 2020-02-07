@@ -16,6 +16,7 @@ type
 
 const
   RootUrl = "https://imagehaul.com/"
+  RootImageUrl = "https://imagehaul.s3-us-west-1.amazonaws.com/"
   MaxHaulCount = 15768
   PageTemplate = """<!DOCTYPE html>
 <html>
@@ -94,10 +95,10 @@ proc haulUrl(h: Haul): string =
   RootUrl & $h.id
 
 proc thumbUrl(h: Haul): string =
-  "https://imagehaul.s3-us-west-1.amazonaws.com/thethumbs/medium/" & h.filename & ".jpg"
+  RootImageUrl & "thethumbs/medium/" & h.filename & ".jpg"
 
 proc imageUrl(h: Haul): string =
-  "https://imagehaul.s3-us-west-1.amazonaws.com/thehauls/" & h.filename & "." & h.fileext
+  RootImageUrl & "thehauls/" & h.filename & "." & h.fileext
 
 proc renderGridItem(h: Haul): string =
   # anchor tag
