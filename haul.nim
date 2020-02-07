@@ -1,4 +1,4 @@
-import asynchttpserver, asyncdispatch, db_postgres, strutils, re, random
+import asynchttpserver, asyncdispatch, db_postgres, strutils, re, random, os
 
 type
   Haul = object
@@ -190,7 +190,7 @@ proc httpHandler(req: Request) {.async.} =
 
 # main
 randomize()
-db = open("localhost", "postgres", "", "ih")
+db = open(getEnv("DB_HOST", "localhost"), getEnv("DB_USER"), getEnv("DB_PASS"), getEnv("DB_DB"))
 
 var server = newAsyncHttpServer()
 waitFor server.serve(Port(6001), httpHandler)
