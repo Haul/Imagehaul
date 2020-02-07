@@ -16,7 +16,7 @@ type
 
 var db {.threadvar.}: DbConn
 
-# http functions
+# sql functions
 proc fetchHaulById(id: string): Haul =
   let row = db.getRow(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null AND id=? LIMIT 1", id)
   if row[0].len <= 0: return
@@ -50,6 +50,17 @@ proc fetchRandomHauls(c: int): seq[Haul] =
       created_at: parseInt(row[4])
     )
 
+proc fetchPreviousId(h: Haul): string =
+  let row = db.getRow(sql"SELECT * FROM hauls WHERE deleted_at IS null AND id<? ORDER BY id DESC LIMIT 1")
+  if row[0].len <= 0: return
+  result = row[0]
+
+proc fetchNextId(h: Haul): string =
+  let row = db.getRow(sql"SELECT * FROM hauls WHERE deleted_at IS null AND id>? ORDER BY id ASC LIMIT 1")
+  if row[0].len <= 0: return
+  result = row[0]
+
+# http functions
 proc parseHaulId(input: string, reg: Regex): string =
   var results: array[1, string]
   if input.match(reg, results):
@@ -102,6 +113,22 @@ proc renderHaulItem(h: Haul): string =
   result.add "<img src=\""
   result.add h.imageUrl()
   result.add "\">"
+
+proc renderPreviousButton(h: Haul): string =
+  if h.id <= 1: return
+  let id = h.fetchPreviousId()
+  if id.len <= 0: return
+  result.add "<a href=\""
+  result.add "https://imagehaul.com/" & id
+  result.add "\" class=\"prev\">Prev</a>"
+
+proc renderNextButton(h: Haul): string =
+  if h.id >= 15000: return
+  let id = h.fetchNextId()
+  if id.len <= 0: return
+  result.add "<a href=\""
+  result.add "https://imagehaul.com/" & id
+  result.add "\" class=\"next\">Next</a>"
 
 let h = Haul(id: 1234, caption: "test caption please ignore", filename: "feelsfilenameman", fileext: "gif")
 echo renderGridItem(h)
