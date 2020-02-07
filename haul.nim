@@ -17,6 +17,40 @@ type
 const
   RootUrl = "https://imagehaul.com/"
   MaxHaulCount = 15768
+  PageTemplate = """<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Imagehaul</title>
+    <style>
+      * { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; margin: 0; padding: 0; }
+      html { background-color: #282B30; color: #f8f8f8; }
+      body { font-family: "myriad-pro","Myriad Pro","Helvetica Neue",Helvetica,Arial,sans-serif; font-size: 18px; line-height: 26px; color: #f8f8f8; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      a,a:link { color: #f8f8f8; text-decoration: none; transition: all 0.5s ease; }
+      a:visited,a:hover { color: #ccc; text-decoration: underline; }
+      h1 { margin-bottom: 25px; text-align: center; }
+      nav { margin-bottom: 25px; text-align: center; }
+      nav a { padding: 10px 20px; margin: 0 10px 10px 0; border-radius: 4px; }
+      nav a:hover { background-color: rgba(0, 0, 0, 0.2); text-decoration: none; }
+      .container { max-width: 1024px; width: 100%; margin: 25px auto; padding: 0 20px; text-align: center; }
+      .container .grid { display: flex; flex-wrap: wrap; justify-content: space-evenly; }
+      .container .grid .item { width: auto; flex 1; margin-bottom: 5px; border-radius: 5px; }
+      .container .grid .item img { width: 100%; border: 1px solid rgba(0, 0, 0, 0.7); border-radius: 5px; }
+      .container .haulitem { margin-bottom: 10px; text-align: center; }
+      .container .haulitem h3 { margin-bottom: 10px; }
+      .container .haulitem img { max-width: 100%; }
+      .container .haulitem video { max-width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1><a href="https://imagehaul.com/" title="Imagehaul.com">Imagehaul.com</a></h1>
+      <nav>{{nav}}</nav>
+      <div class="content">{{content}}</div>
+    </div>
+  </body>
+</html>"""
 
 var db {.threadvar.}: DbConn
 
@@ -24,17 +58,6 @@ var db {.threadvar.}: DbConn
 # sql functions
 proc fetchHaulById(id: int): Haul =
   let row = db.getRow(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null AND id = ? LIMIT 1", id)
-  if row[0].len <= 0: return
-  result = Haul(
-    id: parseInt(row[0]),
-    filename: row[1],
-    caption: row[2],
-    fileext: row[3],
-    created_at: row[4]
-  )
-
-proc fetchRandomHaul(): Haul =
-  let row = db.getRow(sql"SELECT id, filename, caption, fileext, created_at FROM hauls WHERE deleted_at IS null ORDER BY random() LIMIT 1")
   if row[0].len <= 0: return
   result = Haul(
     id: parseInt(row[0]),
@@ -140,12 +163,12 @@ proc renderHomepage(hs: seq[Haul]): string =
   for _, h in hs:
     result.add h.renderGridItem()
   result.add "</div>"
-  renderTemplate(readFile("./index.html"), (nav: renderRandomButton(), content: result))
+  renderTemplate(PageTemplate, (nav: renderRandomButton(), content: result))
 
 proc renderHaulPage(h: Haul): string =
-  if h.id <= 0: return renderTemplate(readFile("./index.html"), (nav: renderRandomButton(), content: "<p>Could not find haul.</p>"))
+  if h.id <= 0: return renderTemplate(PageTemplate, (nav: renderRandomButton(), content: "<p>Could not find haul.</p>"))
   let nav = renderPreviousButton(h) & renderRandomButton() & renderNextButton(h)
-  renderTemplate(readFile("./index.html"), (nav: nav, content: h.renderHaulItem))
+  renderTemplate(PageTemplate, (nav: nav, content: h.renderHaulItem))
 
 
 # http functions
