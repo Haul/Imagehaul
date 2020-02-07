@@ -155,8 +155,7 @@ proc renderRandomButton(): string =
   result.add "\">Random</a>"
 
 proc renderTemplate(tmpl: string, data: tuple[nav, content: string]): string =
-  result = tmpl.replace(re"\{\{nav\}\}", data.nav)
-  return result.replace(re"\{\{content\}\}", data.content)
+  return tmpl.replace(re"\{\{nav\}\}", data.nav).replace(re"\{\{content\}\}", data.content)
 
 proc renderHomepage(hs: seq[Haul]): string =
   result.add "<div class=\"grid\">"
@@ -166,7 +165,9 @@ proc renderHomepage(hs: seq[Haul]): string =
   renderTemplate(PageTemplate, (nav: renderRandomButton(), content: result))
 
 proc renderHaulPage(h: Haul): string =
-  if h.id <= 0: return renderTemplate(PageTemplate, (nav: renderRandomButton(), content: "<p>Could not find haul.</p>"))
+  if h.id <= 0:
+    return renderTemplate(PageTemplate, (nav: renderRandomButton(), content: "<p>Could not find haul.</p>"))
+
   let nav = renderPreviousButton(h) & renderRandomButton() & renderNextButton(h)
   renderTemplate(PageTemplate, (nav: nav, content: h.renderHaulItem))
 
@@ -177,14 +178,11 @@ proc parseHaulId(input: string, reg: Regex): string =
   if input.match(reg, results):
     return results[0]
 
-proc httpHandler(req: Request) {.async,gcsafe.} =
-  let p = req.url.path
-  if p == "/": # show homepage
-    await req.respond(Http200, renderHomepage(fetchRandomHauls(27)))
-
-  let haulid = p.parseHaulId(re"\/([0-9]+)")
-  if haulid.len > 0: # show haul via id
-    await req.respond(Http200, renderHaulPage(fetchHaulById(parseInt(haulid))))
+proc httpHandler(req: Request) {.async.} =
+  if req.url.path != "/":
+    let haulid = req.url.path.parseHaulId(re"\/([0-9]+)")
+    if haulid.len > 0: # show haul via id
+      await req.respond(Http200, renderHaulPage(fetchHaulById(parseInt(haulid))))
 
   # show homepage
   await req.respond(Http200, renderHomepage(fetchRandomHauls(27)))
