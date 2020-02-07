@@ -182,9 +182,6 @@ proc httpHandler(req: Request) {.async,gcsafe.} =
   if p == "/": # show homepage
     await req.respond(Http200, renderHomepage(fetchRandomHauls(27)))
 
-  if p == "/random": # redirect to random haul
-    await req.respond(Http200, renderHaulPage(fetchHaulById(rand(MaxHaulCount))))
-
   let haulid = p.parseHaulId(re"\/([0-9]+)")
   if haulid.len > 0: # show haul via id
     await req.respond(Http200, renderHaulPage(fetchHaulById(parseInt(haulid))))
