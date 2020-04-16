@@ -180,13 +180,15 @@ proc parseHaulId(input: string, reg: Regex): string =
     return results[0]
 
 proc httpHandler(req: Request) {.async.} =
+  var headers = newHttpHeaders([("Content-Type", "text/html")])
+
   if req.url.path != "/":
     let haulid = req.url.path.parseHaulId(re"\/([0-9]+)")
     if haulid.len > 0: # show haul via id
-      await req.respond(Http200, renderHaulPage(fetchHaulById(parseInt(haulid))))
+      await req.respond(Http200, renderHaulPage(fetchHaulById(parseInt(haulid))), headers)
 
   # show homepage
-  await req.respond(Http200, renderHomepage(fetchRandomHauls(27)))
+  await req.respond(Http200, renderHomepage(fetchRandomHauls(27)), headers)
 
 
 # main
